@@ -51,12 +51,12 @@ Install Kubeadm, kubelet and kubectl
   systemctl restart kubelet
  
  #run 
- sudo kubeadm init and follow instruction
+ sudo kubeadm init
+ #and follow instruction
 
  #deploy calico network
  kubectl apply -f https://docs.projectcalico.org/manifests/calico-typha.yaml
 
-kubectl apply -f calico.yaml
 
 #to be able to schedule on the master, remove taint
 kubectl taint nodes --all node-role.kubernetes.io/control-plane,master
