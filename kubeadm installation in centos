@@ -1,1 +1,64 @@
+Please execute all the below commands on master and worker node unless specified specially
 
+create centos machines for master and worker (2 CPU each vm are must and internet should be working on vm, 4 GB of ram per vm will suffice)
+
+
+
+Install Docker
+  sudo yum install -y yum-utils device-mapper-persistent-data lvm2
+  sudo yum-config-manager --add-repo   https://download.docker.com/linux/centos/docker-ce.repo
+  sudo yum update -y 
+  sudo yum install -y https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.6-3.3.el7.x86_64.rpm
+  sudo yum install docker-ce docker-ce-cli 
+  mkdir /etc/docker
+
+cat <<EOF | sudo tee /etc/docker/daemon.json
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2",
+  "storage-opts": [
+    "overlay2.override_kernel_check=true"
+  ]
+}
+EOF
+
+  sudo mkdir -p /etc/systemd/system/docker.service.d
+  sudo systemctl daemon-reload
+  systemctl restart docker
+  systemctl status docker
+  systemctl enable docker
+  
+  
+Create Kubernetes repo
+
+cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-\$basearch
+enabled=1
+gpgcheck=0
+EOF
+
+
+Install Kubeadm, kubelet and kubectl
+  yum install -y kubelet-1.23.1 kubeadm-1.23.1 kubectl-1.23.1
+  systemctl enable --now kubelet
+  systemctl daemon-reload
+  systemctl restart kubelet
+ 
+ #run 
+ sudo kubeadm init and follow instruction
+
+ #deploy calico network
+ kubectl apply -f https://docs.projectcalico.org/manifests/calico-typha.yaml
+
+kubectl apply -f calico.yaml
+
+#to be able to schedule on the master, remove taint
+kubectl taint nodes --all node-role.kubernetes.io/control-plane,master
+#check for taint
+kubectl describe node | egrep -i taint
